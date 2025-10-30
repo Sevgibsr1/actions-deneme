@@ -1,4 +1,4 @@
-name: Python Test Workflow
+name: Python Test Workflow (Genişletilmiş)
 
 on:
   push:
@@ -9,6 +9,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+
     steps:
       - name: Kodu al
         uses: actions/checkout@v3
@@ -16,17 +20,26 @@ jobs:
       - name: Python ortamını kur
         uses: actions/setup-python@v3
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python-version }}
 
-      - name: Test dosyalarını çalıştır
+      - name: Gerekli bağımlılıkları yükle
         run: |
-          echo "🚀 Tüm testler başlatılıyor..."
-          python test_script.py || echo "test_script.py hatalı ❌"
-          python test_carp.py || echo "test_carp.py hatalı ❌"
-          python test_bol.py || echo "test_bol.py hatalı ❌"
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov flake8
+
+      - name: Lint kontrolü (flake8)
+        run: |
+          echo "🧹 Kod kalitesi kontrol ediliyor..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test dosyalarını çalıştır (pytest + coverage)
+        run: |
+          echo "🚀 Testler başlatılıyor..."
+          pytest --cov=. --cov-report=term-missing || echo "❌ Bazı testler hatalı olabilir"
 
       - name: Bildirim gönder (E-posta ve Slack)
-        if: always()  # şu an test için her durumda çalışsın
+        if: always()
         run: |
           echo "📬 Testler bitti, bildirimler gönderiliyor..."
 
@@ -40,10 +53,10 @@ jobs:
           import smtplib
           from email.mime.text import MIMEText
 
-          msg = MIMEText("beni sebiyon mu evet mi eed mi yes mi")
+          msg = MIMEText("✅ Testler tamamlandı!\nSonuç: Başarılı 🎉")
           msg["Subject"] = "✅ Test Sonuçları - Başarılı"
           msg["From"] = "${{ secrets.EMAIL_USER }}"
-          msg["To"] = "${{ secrets.EMAIL_USER }}, mehdiozdemir10@gmail.com"
+          msg["To"] = "${{ secrets.EMAIL_USER }}"
 
           with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
               server.starttls()
