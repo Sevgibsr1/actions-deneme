@@ -1,19 +1,21 @@
-name: Merhaba Sevgi Pipeline
+name: Python Test Workflow
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:   # 👈 Bu satır elle çalıştırmayı aktif eder
+    branches: [ main ]
 
 jobs:
-  selamlama:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Kodu Checkout Et
+      - name: Kodu al
         uses: actions/checkout@v3
 
-      - name: Merhaba Mesajı Yaz
-        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor 🚀"
+      - name: Python ortamını kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
+      - name: Test dosyasını çalıştır
+        run: python test_script.py
