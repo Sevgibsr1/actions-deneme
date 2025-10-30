@@ -1,35 +1,28 @@
-name: Python Test Workflow
+# Testlerden sonra bildirimi çalıştır
+- name: Bildirim gönder (E-posta ve Slack)
+  if: success()  # testler başarılı olursa çalışır
+  run: |
+    echo "🚀 Testler geçti, bildirimler gönderiliyor..."
 
-on:
-  push:
-    branches: [ "main" ]
+    # ---- SLACK BİLDİRİMİ ----
+    curl -X POST -H 'Content-type: application/json' \
+      --data '{"text":"✅ *Tüm testler başarıyla geçti!* \n📦 Deploy işlemi başlatılıyor..."}' \
+      ${{ secrets.SLACK_WEBHOOK_URL }}
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+    # ---- E-POSTA BİLDİRİMİ ----
+    python - <<EOF
+    import smtplib
+    from email.mime.text import MIMEText
 
-    steps:
-      - name: Kodu al
-        uses: actions/checkout@v4
+    msg = MIMEText("✅ Tüm testler başarıyla geçti!\n📦 Deploy işlemi başlatılıyor...")
+    msg["Subject"] = "✅ Test Sonuçları - Başarılı"
+    msg["From"] = "${{ secrets.EMAIL_USER }}"
+    msg["To"] = "${{ secrets.EMAIL_USER }}"  # istersen farklı alıcı da ekleyebilirsin
 
-      - name: Python ortamını kur
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+    with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
+        server.starttls()
+        server.login("${{ secrets.EMAIL_USER }}", "${{ secrets.EMAIL_PASS }}")
+        server.send_message(msg)
 
-      - name: Test dosyalarını çalıştır
-        run: |
-          echo "🔹 Tüm testler başlatılıyor..."
-          python test_script.py || echo "test_script.py hatalı ❌"
-          python test_carp.py || echo "test_carp.py hatalı ❌"
-          python test_bol.py || echo "test_bol.py hatalı ❌"
-
-      - name: Test sonucu bildir
-        run: |
-          echo "✅ Tüm testler tamamlandı!"
-
-      - name: Deploy aşamasını başlat
-        if: success()
-        run: |
-          echo "🚀 Tüm testler geçti. Deploy işlemi başlatılıyor..."
-          echo "Uygulama deploy edildi!"
+    print("📨 E-posta bildirimi gönderildi!")
+    EOF
