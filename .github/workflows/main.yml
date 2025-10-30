@@ -1,3 +1,19 @@
+name: Merhaba Sevgi Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  selamlama:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu Checkout Et
+        uses: actions/checkout@v3
+
+      - name: Merhaba Mesajı Yaz
+        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor 🚀"
 name: İlk GitHub Actions Çalışmam
 
 on:
