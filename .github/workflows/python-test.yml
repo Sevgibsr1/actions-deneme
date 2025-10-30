@@ -40,7 +40,7 @@ jobs:
           import smtplib
           from email.mime.text import MIMEText
 
-          msg = MIMEText("✅ Tüm testler tamamlandı!\n🚀 Deploy işlemi başlatılıyor...")
+          msg = MIMEText("beni sebiyon mu evet mi eed mi yes mi")
           msg["Subject"] = "✅ Test Sonuçları - Başarılı"
           msg["From"] = "${{ secrets.EMAIL_USER }}"
           msg["To"] = "${{ secrets.EMAIL_USER }}, mehdiozdemir10@gmail.com"
