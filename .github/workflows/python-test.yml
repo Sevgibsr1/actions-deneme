@@ -2,23 +2,26 @@ name: Python Test Workflow
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Kodu al
-        uses: actions/checkout@v3
+    - name: Kodu al
+      uses: actions/checkout@v3
 
-      - name: Python ortamını kur
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Python ortamını kur
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
 
-      - name: Test dosyasını çalıştır
-        run: |
-          set -e
-          python test_script.py
+    - name: Test dosyasını çalıştır
+      run: python test_script.py
+
+    - name: Test sonucu bildir
+      if: failure()  # sadece test başarısız olursa çalışır
+      run: echo "⚠️ Test başarısız oldu, lütfen hatayı kontrol et!"
