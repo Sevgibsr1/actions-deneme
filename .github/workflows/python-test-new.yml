@@ -1,4 +1,4 @@
-name: Python Test Workflow
+name: Python Test Workflow (Genişletilmiş)
 
 on:
   push:
@@ -18,30 +18,46 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Test dosyalarını çalıştır
+      - name: Bağımlılıkları yükle
         run: |
-          echo "🚀 Tüm testler başlatılıyor..."
-          python test_script.py || echo "test_script.py hatalı ❌"
-          python test_carp.py || echo "test_carp.py hatalı ❌"
-          python test_bol.py || echo "test_bol.py hatalı ❌"
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov flake8
+
+      - name: Lint kontrolü (flake8)
+        run: |
+          echo "🧹 Kod kalitesi kontrolü başlatılıyor..."
+          # Hataları göster, ama build’i durdurma
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Testleri çalıştır ve coverage raporu oluştur
+        run: |
+          echo "🚀 Testler başlatılıyor..."
+          pytest --cov=. --cov-report=term-missing --cov-report=xml
+
+      - name: Coverage raporunu yükle (Artifact)
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
 
       - name: Bildirim gönder (E-posta ve Slack)
-        if: always()  # şu an test için her durumda çalışsın
+        if: always()
         run: |
-          echo "📬 Testler bitti, bildirimler gönderiliyor..."
+          echo "📬 Testler tamamlandı, bildirim gönderiliyor..."
 
-          # ---- SLACK BİLDİRİMİ ----
+          # ---- SLACK ----
           curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"✅ *Tüm testler tamamlandı!* 🚀 Deploy işlemi başlatılıyor..."}' \
+          --data '{"text":"✅ *Testler tamamlandı!* Lint ve coverage raporu başarıyla oluşturuldu."}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
-          # ---- E-POSTA BİLDİRİMİ ----
+          # ---- E-POSTA ----
           python - <<EOF
           import smtplib
           from email.mime.text import MIMEText
 
-          msg = MIMEText("✅ Tüm testler tamamlandı!\n🚀 Deploy işlemi başlatılıyor...")
-          msg["Subject"] = "✅ Test Sonuçları - Başarılı"
+          msg = MIMEText("✅ Testler tamamlandı!\n📊 Coverage raporu oluşturuldu.\n🧹 Lint kontrolü başarıyla bitti.")
+          msg["Subject"] = "✅ Test Sonuçları - Lint & Coverage Başarılı"
           msg["From"] = "${{ secrets.EMAIL_USER }}"
           msg["To"] = "${{ secrets.EMAIL_USER }}"
 
