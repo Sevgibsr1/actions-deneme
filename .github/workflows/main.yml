@@ -4,20 +4,16 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:   # 👈 Bu satır elle çalıştırmayı aktif eder
 
 jobs:
-  build:
+  selamlama:
     runs-on: ubuntu-latest
 
     steps:
       - name: Kodu Checkout Et
         uses: actions/checkout@v3
 
-      - name: Node.js ortamını kur
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Test mesajı yaz
+      - name: Merhaba Mesajı Yaz
         run: echo "Merhaba Sevgi! GitHub Actions çalışıyor 🚀"
 
