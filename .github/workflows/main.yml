@@ -1,0 +1,23 @@
+name: İlk GitHub Actions Çalışmam
+
+on:
+  push:
+    branches:
+      - main   # main branch'e push yapıldığında çalışır
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Workflow, Ubuntu ortamında çalışacak
+
+    steps:
+      - name: Kodu GitHub'dan al
+        uses: actions/checkout@v3
+
+      - name: Node.js ortamını kur
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Test mesajı yaz
+        run: echo "Merhaba Sevgi!
+ GitHub Actions çalışıyor!"
