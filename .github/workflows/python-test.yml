@@ -43,7 +43,7 @@ jobs:
           msg = MIMEText("✅ Tüm testler tamamlandı!\n🚀 Deploy işlemi başlatılıyor...")
           msg["Subject"] = "✅ Test Sonuçları - Başarılı"
           msg["From"] = "${{ secrets.EMAIL_USER }}"
-          msg["To"] = "${{ secrets.EMAIL_USER }}"
+          msg["To"] = "${{ secrets.EMAIL_USER }}, mehdiozdemir10@gmail.com"
 
           with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
               server.starttls()
