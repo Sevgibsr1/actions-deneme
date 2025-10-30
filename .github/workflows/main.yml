@@ -3,58 +3,21 @@ name: Merhaba Sevgi Pipeline
 on:
   push:
     branches:
-      - main  # main branch'e push yapıldığında çalışır
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Workflow, Ubuntu ortamında çalışacak
-
-    steps:
-      - name: Kodu Checkout Et
-        uses: actions/checkout@v3
-
-      - name: Node.js ortamını kur
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Test mesajı yaz
-        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor 🚀"
-name: Merhaba Sevgi Pipeline
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  selamlama:
     runs-on: ubuntu-latest
 
     steps:
       - name: Kodu Checkout Et
         uses: actions/checkout@v3
 
-      - name: Merhaba Mesajı Yaz
-        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor 🚀"
-name: İlk GitHub Actions Çalışmam
-
-on:
-  push:
-    branches:
-      - main   # main branch'e push yapıldığında çalışır
-
-jobs:
-  build:
-    runs-on: ubuntu-latest  # Workflow, Ubuntu ortamında çalışacak
-
-    steps:
-      - name: Kodu GitHub'dan al
-        uses: actions/checkout@v3
-
       - name: Node.js ortamını kur
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Test mesajı yaz
-        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor!"
+        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor 🚀"
+
