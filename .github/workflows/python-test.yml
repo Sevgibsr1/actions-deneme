@@ -1,28 +1,52 @@
-# Testlerden sonra bildirimi çalıştır
-- name: Bildirim gönder (E-posta ve Slack)
-  if: success()  # testler başarılı olursa çalışır
-  run: |
-    echo "🚀 Testler geçti, bildirimler gönderiliyor..."
+name: Python Test Workflow
 
-    # ---- SLACK BİLDİRİMİ ----
-    curl -X POST -H 'Content-type: application/json' \
-      --data '{"text":"✅ *Tüm testler başarıyla geçti!* \n📦 Deploy işlemi başlatılıyor..."}' \
-      ${{ secrets.SLACK_WEBHOOK_URL }}
+on:
+  push:
+    branches:
+      - main
 
-    # ---- E-POSTA BİLDİRİMİ ----
-    python - <<EOF
-    import smtplib
-    from email.mime.text import MIMEText
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-    msg = MIMEText("✅ Tüm testler başarıyla geçti!\n📦 Deploy işlemi başlatılıyor...")
-    msg["Subject"] = "✅ Test Sonuçları - Başarılı"
-    msg["From"] = "${{ secrets.EMAIL_USER }}"
-    msg["To"] = "${{ secrets.EMAIL_USER }}"  # istersen farklı alıcı da ekleyebilirsin
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v3
 
-    with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
-        server.starttls()
-        server.login("${{ secrets.EMAIL_USER }}", "${{ secrets.EMAIL_PASS }}")
-        server.send_message(msg)
+      - name: Python ortamını kur
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
 
-    print("📨 E-posta bildirimi gönderildi!")
-    EOF
+      - name: Test dosyalarını çalıştır
+        run: |
+          echo "🚀 Tüm testler başlatılıyor..."
+          python test_script.py || echo "test_script.py hatalı ❌"
+          python test_carp.py || echo "test_carp.py hatalı ❌"
+          python test_bol.py || echo "test_bol.py hatalı ❌"
+
+      - name: Bildirim gönder (E-posta ve Slack)
+        if: always()  # şu an test için her durumda çalışsın
+        run: |
+          echo "📬 Testler bitti, bildirimler gönderiliyor..."
+
+          # ---- SLACK BİLDİRİMİ ----
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ *Tüm testler tamamlandı!* 🚀 Deploy işlemi başlatılıyor..."}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+          # ---- E-POSTA BİLDİRİMİ ----
+          python - <<EOF
+          import smtplib
+          from email.mime.text import MIMEText
+
+          msg = MIMEText("✅ Tüm testler tamamlandı!\n🚀 Deploy işlemi başlatılıyor...")
+          msg["Subject"] = "✅ Test Sonuçları - Başarılı"
+          msg["From"] = "${{ secrets.EMAIL_USER }}"
+          msg["To"] = "${{ secrets.EMAIL_USER }}"
+
+          with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
+              server.starttls()
+              server.login("${{ secrets.EMAIL_USER }}", "${{ secrets.EMAIL_PASS }}")
+              server.send_message(msg)
+          EOF
