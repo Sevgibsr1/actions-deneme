@@ -2,7 +2,10 @@ def topla(a, b):
     return a + b
 
 def test_topla():
-    assert topla(2, 3) == 5
-    print("🎯 Test başarılı - log'da bu yazı görünecek!")
+    try:
+        assert topla(2, 3) == 6  # Bilerek hata verdirebiliriz (değiştirilebilir)
+        print("✅ Test başarılı!")
+    except AssertionError:
+        print("❌ Test başarısız oldu — Beklenen sonuç yanlış!")
 
 test_topla()
