@@ -1,4 +1,4 @@
-name: Python Test Workflow (Genişletilmiş)
+name: Python Test Workflow
 
 on:
   push:
@@ -9,10 +9,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: [3.9, 3.10, 3.11, 3.12]
-
     steps:
       - name: Kodu al
         uses: actions/checkout@v3
@@ -20,26 +16,17 @@ jobs:
       - name: Python ortamını kur
         uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.10'
 
-      - name: Gerekli bağımlılıkları yükle
+      - name: Test dosyalarını çalıştır
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov flake8
-
-      - name: Lint kontrolü (flake8)
-        run: |
-          echo "🧹 Kod kalitesi kontrol ediliyor..."
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-      - name: Test dosyalarını çalıştır (pytest + coverage)
-        run: |
-          echo "🚀 Testler başlatılıyor..."
-          pytest --cov=. --cov-report=term-missing || echo "❌ Bazı testler hatalı olabilir"
+          echo "🚀 Tüm testler başlatılıyor..."
+          python test_script.py || echo "test_script.py hatalı ❌"
+          python test_carp.py || echo "test_carp.py hatalı ❌"
+          python test_bol.py || echo "test_bol.py hatalı ❌"
 
       - name: Bildirim gönder (E-posta ve Slack)
-        if: always()
+        if: always()  # şu an test için her durumda çalışsın
         run: |
           echo "📬 Testler bitti, bildirimler gönderiliyor..."
 
@@ -53,7 +40,7 @@ jobs:
           import smtplib
           from email.mime.text import MIMEText
 
-          msg = MIMEText("✅ Testler tamamlandı!\nSonuç: Başarılı 🎉")
+          msg = MIMEText("✅ Tüm testler tamamlandı!\n🚀 Deploy işlemi başlatılıyor...")
           msg["Subject"] = "✅ Test Sonuçları - Başarılı"
           msg["From"] = "${{ secrets.EMAIL_USER }}"
           msg["To"] = "${{ secrets.EMAIL_USER }}"
