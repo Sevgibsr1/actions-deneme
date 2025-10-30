@@ -35,5 +35,4 @@ jobs:
           node-version: '18'
 
       - name: Test mesajı yaz
-        run: echo "Merhaba Sevgi!"
- GitHub Actions çalışıyor!"
+        run: echo "Merhaba Sevgi! GitHub Actions çalışıyor!"
