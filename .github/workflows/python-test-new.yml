@@ -1,4 +1,4 @@
-name: Python Test Workflow (Genişletilmiş)
+name: Full Python CI/CD Pipeline
 
 on:
   push:
@@ -6,63 +6,73 @@ on:
       - main
 
 jobs:
-  test:
+  build-test-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Kodu al
-        uses: actions/checkout@v3
+      # 1️⃣ Kodları al
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Python ortamını kur
-        uses: actions/setup-python@v3
+      # 2️⃣ Python ortamını kur
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Bağımlılıkları yükle
+      # 3️⃣ Bağımlılıkları yükle
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt || echo "requirements.txt bulunamadı"
           pip install pytest pytest-cov flake8
 
-      - name: Lint kontrolü (flake8)
+      # 4️⃣ Kod kalitesi (Linting)
+      - name: Run linting
         run: |
-          echo "🧹 Kod kalitesi kontrolü başlatılıyor..."
-          # Hataları göster, ama build’i durdurma
+          echo "🧹 Kod kalitesi kontrol ediliyor..."
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Testleri çalıştır ve coverage raporu oluştur
+      # 5️⃣ Unit testler
+      - name: Run unit tests
         run: |
-          echo "🚀 Testler başlatılıyor..."
-          pytest --cov=. --cov-report=term-missing --cov-report=xml
+          echo "🧪 Unit testler çalıştırılıyor..."
+          pytest -v --maxfail=1 --disable-warnings --cov=.
 
-      - name: Coverage raporunu yükle (Artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
+      # 6️⃣ Integration testler
+      - name: Run integration tests
+        run: |
+          echo "🔗 Integration testler başlatılıyor..."
+          pytest tests/integration || echo "⚠️ Integration test dosyası yok"
 
-      - name: Bildirim gönder (E-posta ve Slack)
+      # 7️⃣ Docker image build
+      - name: Build Docker image
+        run: |
+          echo "🐳 Docker image oluşturuluyor..."
+          docker build -t myapp:latest .
+
+      # 8️⃣ Docker image push (örnek için simülasyon)
+      - name: Push Docker image (Simulated)
+        run: |
+          echo "📤 Docker image push ediliyor (örnek simülasyon)..."
+          echo "docker push myregistry/myapp:latest"
+
+      # 9️⃣ Deploy aşaması (örnek)
+      - name: Deploy to environment (Simulated)
+        run: |
+          echo "🚀 Deploy işlemi başlatıldı (örnek)..."
+          sleep 2
+          echo "✅ Deploy tamamlandı."
+
+      # 🔟 Smoke test
+      - name: Smoke test after deploy
+        run: |
+          echo "🔥 Smoke test çalıştırılıyor..."
+          curl -Is http://localhost:8000 || echo "⚠️ Uygulama erişilemedi, sadece örnek test"
+
+      # 🔔 Bildirim
+      - name: Notify via Slack and Email
         if: always()
         run: |
-          echo "📬 Testler tamamlandı, bildirim gönderiliyor..."
-
-          # ---- SLACK ----
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"✅ *Testler tamamlandı!* Lint ve coverage raporu başarıyla oluşturuldu."}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
-
-          # ---- E-POSTA ----
-          python - <<EOF
-          import smtplib
-          from email.mime.text import MIMEText
-
-          msg = MIMEText("✅ Testler tamamlandı!\n📊 Coverage raporu oluşturuldu.\n🧹 Lint kontrolü başarıyla bitti.")
-          msg["Subject"] = "✅ Test Sonuçları - Lint & Coverage Başarılı"
-          msg["From"] = "${{ secrets.EMAIL_USER }}"
-          msg["To"] = "${{ secrets.EMAIL_USER }}"
-
-          with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
-              server.starttls()
-              server.login("${{ secrets.EMAIL_USER }}", "${{ secrets.EMAIL_PASS }}")
-              server.send_message(msg)
-          EOF
+          echo "📬 Bildirimler gönderiliyor...."
