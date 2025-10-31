@@ -75,4 +75,4 @@ jobs:
       - name: Notify via Slack and Email
         if: always()
         run: |
-          echo "📬 Bildirimler gönderiliyor...."
+          echo "📬 Bildirimler gönderiliyor..."
