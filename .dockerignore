@@ -1,0 +1,37 @@
+# .dockerignore - Docker'a hangi dosyaları kopyalamayacağını söyler
+# Bu sayede gereksiz dosyalar container'a kopyalanmaz ve build daha hızlı olur
+
+# Git dosyaları
+.git
+.gitignore
+
+# Python cache ve bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment (eğer varsa)
+venv/
+env/
+ENV/
+
+# IDE dosyaları
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage raporları
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# Log dosyaları
+*.log
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
