@@ -1,4 +1,4 @@
-name: Python Test Workflow (Genişletilmiş)
+name: Python Test Workflow
 
 on:
   push:
@@ -48,8 +48,25 @@ jobs:
       - name: Docker image oluştur
         run: docker build -t actions-deneme .
 
-      - name: Docker container’ı test et
-        run: docker run actions-deneme
+      - name: Docker image'ları listele ve görüntüle
+        run: |
+          echo "📦 Oluşturulan Docker image'ları:"
+          docker images
+          echo ""
+          echo "📊 actions-deneme image detayları:"
+          docker images actions-deneme
+          echo ""
+          echo "📏 Image boyutu:"
+          docker images actions-deneme --format "{{.Size}}"
+          echo ""
+          echo "🆔 Image ID:"
+          docker images actions-deneme --format "{{.ID}}"
+
+      - name: Docker container'ı test et
+        run: docker run --rm actions-deneme
+
+      - name: Container içindeki dosyaları listele
+        run: docker run --rm actions-deneme ls -la /app
 
 
 
