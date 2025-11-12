@@ -24,3 +24,7 @@ Thumbs.db
 # Logs
 *.log
 
+# Kubernetes/Minikube
+minikube
+*.kubeconfig
+
