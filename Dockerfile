@@ -1,10 +1,10 @@
 #
 # syntax=docker/dockerfile:1.7-labs
 #
-# ÖDEV 4 için optimize Dockerfile:
-# - BuildKit cache kullanımı
-# - Multi-stage: builder (test/deps) + runtime (minimal)
-# - .dockerignore ile gereksiz dosyaları dışarıda bırakma
+# Multi-stage Dockerfile:
+# - Builder stage: Test ve bağımlılık kurulumu
+# - Runtime stage (hello): Basit hello.py uygulaması
+# - Runtime stage (web): Flask web uygulaması
 #
 
 # =========================
@@ -25,13 +25,36 @@ COPY . .
 RUN pytest --maxfail=1 --disable-warnings -q || true
 
 # =========================
-# 2) RUNTIME (production)
+# 2) RUNTIME - Hello (basit uygulama)
 # =========================
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim AS hello-runtime
 WORKDIR /app
 
-# Sadece gereken uygulama dosyalarını kopyalayın (çakışma riskini azaltın)
+# Sadece gereken uygulama dosyalarını kopyalayın
 COPY hello.py .
 
 # Üretim için varsayılan komut
 CMD ["python", "hello.py"]
+
+# =========================
+# 3) RUNTIME - Web (Flask uygulaması)
+# =========================
+FROM python:3.12-slim AS web-runtime
+WORKDIR /app
+
+# Web uygulaması bağımlılıkları
+COPY web/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Web uygulaması dosyaları
+COPY web /app
+
+# Non-root kullanıcı oluştur
+RUN useradd --create-home --home-dir /home/appuser --shell /bin/bash appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 5000
+
+# Flask uygulamasını çalıştır
+CMD ["python", "app.py"]

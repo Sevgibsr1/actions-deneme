@@ -6,16 +6,45 @@ Bu repo, `web` (Flask) + `redis` + (opsiyonel) `nginx` servislerinden oluşur.
 
 ```
 .
-├── web/
-│   ├── app.py
+├── web/                 # Flask web uygulaması
+│   ├── app.py          # Ana uygulama dosyası
 │   ├── requirements.txt
-│   └── Dockerfile
-├── nginx/               (opsiyonel)
+│   └── Dockerfile      # Web için özel Dockerfile
+├── nginx/               # (opsiyonel) Reverse proxy
 │   ├── nginx.conf
 │   └── Dockerfile
-├── docker-compose.yml
+├── k8s/                 # Kubernetes manifestleri
+│   ├── 03-config/      # ConfigMap ve Secret
+│   ├── 04-scaling/     # Deployment ve HPA
+│   ├── 05-ingress/     # Ingress yapılandırmaları
+│   ├── 06-storage/      # PVC ve StatefulSet
+│   ├── 08-security/     # RBAC ve NetworkPolicy
+│   └── 11-chaos/       # Chaos Engineering
+├── docker-compose.yml   # Multi-container yapılandırması
+├── Dockerfile           # Multi-stage Dockerfile (hello + web)
 └── README.md
 ```
+
+### Dockerfile Kullanımı
+
+Bu proje **multi-stage** Dockerfile kullanır. İki farklı uygulama için build yapabilirsiniz:
+
+**Hello Uygulaması (Basit):**
+```bash
+docker build -t actions-deneme:hello --target hello-runtime .
+docker run --rm actions-deneme:hello
+```
+
+**Web Uygulaması (Flask):**
+```bash
+docker build -t actions-deneme:web --target web-runtime .
+docker run --rm -p 5000:5000 \
+  -e REDIS_HOST=redis \
+  -e REDIS_PORT=6379 \
+  actions-deneme:web
+```
+
+Detaylı bilgi için: [DOCKERFILE_ACIKLAMA.md](DOCKERFILE_ACIKLAMA.md)
 
 ### Ortam Değişkenleri
 

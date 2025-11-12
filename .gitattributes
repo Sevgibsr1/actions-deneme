@@ -1,0 +1,34 @@
+# Satır sonu ayarları
+# Linux/Mac için LF, Windows için CRLF otomatik dönüşümü
+
+# Tüm text dosyaları için LF kullan
+* text=auto eol=lf
+
+# Script dosyaları için LF zorunlu
+*.sh text eol=lf
+*.bash text eol=lf
+*.py text eol=lf
+
+# YAML dosyaları için LF
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Markdown dosyaları için LF
+*.md text eol=lf
+
+# Binary dosyalar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+
+# Dockerfile için LF
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# Config dosyaları için LF
+*.conf text eol=lf
+*.config text eol=lf
+
