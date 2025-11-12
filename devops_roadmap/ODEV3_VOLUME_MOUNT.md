@@ -147,11 +147,8 @@ cat hello.py
 **Önce bir test scripti oluşturun:**
 ```bash
 # test_live.py dosyası oluştur
-cat > test_live.py << 'EOF'
-def test_live():
-    print("Live reload test çalışıyor!")
-    assert True
-EOF
+cat hello.py
+
 ```
 
 **Container'ı volume mount ile çalıştırın:**
@@ -350,13 +347,13 @@ exit
 
 Ödevi tamamladınız mı? Aşağıdakileri kontrol edin:
 
-- [ ] `-v` flag'i ile bind mount yapabiliyorum
-- [ ] Host-Container dosya paylaşımı yapabiliyorum
-- [ ] Read-only mount (`:ro`) kullanabiliyorum
-- [ ] Belirli dosyaları mount edebiliyorum
-- [ ] Named volume oluşturup kullanabiliyorum
-- [ ] Live reload geliştirme yapabiliyorum
-- [ ] Volume temizleme yapabiliyorum
+- [+ ] `-v` flag'i ile bind mount yapabiliyorum
+- [ +] Host-Container dosya paylaşımı yapabiliyorum
+- [ +] Read-only mount (`:ro`) kullanabiliyorum
+- [ +] Belirli dosyaları mount edebiliyorum
+- [ +] Named volume oluşturup kullanabiliyorum
+- [ +] Live reload geliştirme yapabiliyorum
+- [ +] Volume temizleme yapabiliyorum
 
 ---
 

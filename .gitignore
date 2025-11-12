@@ -28,3 +28,10 @@ Thumbs.db
 minikube
 *.kubeconfig
 
+# TLS Certificates (gizli anahtarlar)
+*.key
+tls.crt
+tls.key
+*.pem
+*.crt
+
