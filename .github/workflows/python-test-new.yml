@@ -8,6 +8,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    # Job seviyesinde sonuçları saklamak için outputs
+    outputs:
+      lint_status: ${{ steps.lint_check.outputs.status }}
+      lint_errors: ${{ steps.lint_check.outputs.errors }}
+      test_status: ${{ steps.run_tests.outputs.status }}
+      test_coverage: ${{ steps.run_tests.outputs.coverage }}
+      docker_status: ${{ steps.docker_test.outputs.status }}
+      overall_status: ${{ steps.set_status.outputs.status }}
+      status_emoji: ${{ steps.set_status.outputs.emoji }}
+      status_message: ${{ steps.set_status.outputs.message }}
 
     steps:
       - name: Kodu al
@@ -24,75 +35,317 @@ jobs:
           pip install pytest pytest-cov flake8
 
       - name: Lint kontrolü (flake8)
+        id: lint_check
+        continue-on-error: true
         run: |
           echo "🧹 Kod kalitesi kontrolü başlatılıyor..."
-          # Hataları göster, ama build’i durdurma
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          
+          # Kritik hataları kontrol et (syntax errors)
+          CRITICAL_ERRORS=$(flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics 2>&1 || true)
+          
+          # Genel lint kontrolü
+          LINT_OUTPUT=$(flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics 2>&1 || true)
+          
+          # Hata sayısını bul
+          ERROR_COUNT=$(echo "$LINT_OUTPUT" | grep -oP '\d+(?= error)' | head -1 || echo "0")
+          if [ -z "$ERROR_COUNT" ]; then
+            ERROR_COUNT=0
+          fi
+          
+          # Kritik hata var mı kontrol et
+          if echo "$CRITICAL_ERRORS" | grep -q "SyntaxError\|IndentationError"; then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "errors=$CRITICAL_ERRORS" >> $GITHUB_OUTPUT
+            echo "❌ Lint kontrolü BAŞARISIZ: Syntax hatası bulundu!"
+            exit 1
+          elif [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "errors=$LINT_OUTPUT" >> $GITHUB_OUTPUT
+            echo "⚠️ Lint kontrolü: $ERROR_COUNT hata bulundu (kritik değil)"
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "errors=" >> $GITHUB_OUTPUT
+            echo "✅ Lint kontrolü başarılı!"
+          fi
 
       - name: Testleri çalıştır ve coverage raporu oluştur
+        id: run_tests
+        continue-on-error: true
         run: |
           echo "🚀 Testler başlatılıyor..."
-          pytest --cov=. --cov-report=term-missing --cov-report=xml
+          
+          # Testleri çalıştır ve sonucu yakala
+          if pytest --cov=. --cov-report=term-missing --cov-report=xml --cov-report=json -v 2>&1 | tee test_output.txt; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            
+            # Coverage yüzdesini bul
+            COVERAGE=$(python -c "import json; data=json.load(open('.coverage.json')); print(f\"{data['totals']['percent_covered']:.1f}%\")" 2>/dev/null || echo "N/A")
+            echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "✅ Testler başarılı! Coverage: $COVERAGE"
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "coverage=N/A" >> $GITHUB_OUTPUT
+            echo "❌ Testler başarısız!"
+            
+            # Test hatalarını göster
+            if [ -f test_output.txt ]; then
+              echo "Test hataları:"
+              cat test_output.txt | grep -A 5 "FAILED\|ERROR" || true
+            fi
+            exit 1
+          fi
 
       - name: Coverage raporunu yükle (Artifact)
+        if: steps.run_tests.outputs.status == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.xml
 
-
       - name: Docker kurulumu
+        if: steps.run_tests.outputs.status == 'success'
         uses: docker/setup-buildx-action@v3
 
       - name: Docker image oluştur
-        run: docker build -t actions-deneme .
+        id: docker_build
+        if: steps.run_tests.outputs.status == 'success'
+        continue-on-error: true
+        run: |
+          if docker build -t actions-deneme . 2>&1 | tee docker_build.txt; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ Docker image başarıyla oluşturuldu!"
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Docker build başarısız!"
+            exit 1
+          fi
 
       - name: Docker image'ları listele ve görüntüle
+        if: steps.docker_build.outputs.status == 'success' || steps.docker_build.outcome == 'success'
         run: |
           echo "📦 Oluşturulan Docker image'ları:"
           docker images
           echo ""
           echo "📊 actions-deneme image detayları:"
           docker images actions-deneme
-          echo ""
-          echo "📏 Image boyutu:"
-          docker images actions-deneme --format "{{.Size}}"
-          echo ""
-          echo "🆔 Image ID:"
-          docker images actions-deneme --format "{{.ID}}"
 
       - name: Docker container'ı test et
-        run: docker run --rm actions-deneme
+        id: docker_test
+        if: steps.docker_build.outputs.status == 'success' || steps.docker_build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if docker run --rm actions-deneme 2>&1 | tee docker_run.txt; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ Docker container testi başarılı!"
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Docker container testi başarısız!"
+            if [ -f docker_run.txt ]; then
+              echo "Container çıktısı:"
+              cat docker_run.txt
+            fi
+            exit 1
+          fi
 
       - name: Container içindeki dosyaları listele
+        if: (steps.docker_test.outputs.status == 'success' || steps.docker_test.outcome == 'success')
         run: docker run --rm actions-deneme ls -la /app
 
+      - name: Genel durum belirleme
+        id: set_status
+        run: |
+          LINT_STATUS="${{ steps.lint_check.outputs.status }}"
+          TEST_STATUS="${{ steps.run_tests.outputs.status }}"
+          DOCKER_STATUS="${{ steps.docker_test.outputs.status }}"
+          
+          # Genel durumu belirle
+          if [ "$TEST_STATUS" = "failed" ]; then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "message=Testler başarısız oldu" >> $GITHUB_OUTPUT
+          elif [ "$DOCKER_STATUS" = "failed" ]; then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "message=Docker testi başarısız oldu" >> $GITHUB_OUTPUT
+          elif [ "$LINT_STATUS" = "failed" ]; then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "message=Lint kontrolü başarısız (syntax hatası)" >> $GITHUB_OUTPUT
+          elif [ "$LINT_STATUS" = "warning" ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "emoji=⚠️" >> $GITHUB_OUTPUT
+            echo "message=Testler geçti ama lint uyarıları var" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "message=Tüm testler başarıyla tamamlandı" >> $GITHUB_OUTPUT
+          fi
 
-
-
-      - name: Bildirim gönder (E-posta ve Slack)
+      - name: Detaylı bildirim gönder (E-posta ve Slack)
         if: always()
         run: |
-          echo "📬 Testler tamamlandı, bildirim gönderiliyor..."
-
+          echo "📬 Test sonuçları hazırlanıyor..."
+          
+          # Durum bilgilerini al
+          LINT_STATUS="${{ steps.lint_check.outputs.status }}"
+          TEST_STATUS="${{ steps.run_tests.outputs.status }}"
+          DOCKER_STATUS="${{ steps.docker_test.outputs.status }}"
+          OVERALL_STATUS="${{ steps.set_status.outputs.status }}"
+          STATUS_EMOJI="${{ steps.set_status.outputs.emoji }}"
+          STATUS_MESSAGE="${{ steps.set_status.outputs.message }}"
+          COVERAGE="${{ steps.run_tests.outputs.coverage }}"
+          
+          # Workflow bilgileri
+          WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_SHA="${{ github.sha }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          BRANCH="${{ github.ref_name }}"
+          ACTOR="${{ github.actor }}"
+          
+          # Email içeriği oluştur
+          EMAIL_BODY=$(cat <<EOF
+          $STATUS_EMOJI Test Sonuçları - $STATUS_MESSAGE
+          
+          📊 Detaylı Rapor:
+          ──────────────────────────────────────
+          
+          🔍 Lint Kontrolü: $LINT_STATUS
+          🧪 Test Durumu: $TEST_STATUS
+          🐳 Docker Testi: $DOCKER_STATUS
+          📈 Coverage: $COVERAGE
+          
+          ──────────────────────────────────────
+          
+          📝 Commit Bilgileri:
+          • Branch: $BRANCH
+          • Commit: ${COMMIT_SHA:0:7}
+          • Mesaj: $COMMIT_MSG
+          • Kullanıcı: $ACTOR
+          
+          🔗 Workflow Detayları:
+          $WORKFLOW_URL
+          
+          ──────────────────────────────────────
+          
+          EOF
+          )
+          
+          # Hata detayları varsa ekle
+          if [ "$LINT_STATUS" = "failed" ] || [ "$LINT_STATUS" = "warning" ]; then
+            LINT_ERRORS="${{ steps.lint_check.outputs.errors }}"
+            if [ -n "$LINT_ERRORS" ]; then
+              EMAIL_BODY="${EMAIL_BODY}
+          ⚠️ Lint Hataları:
+          $LINT_ERRORS
+          
+          "
+            fi
+          fi
+          
+          # Test hataları varsa ekle
+          if [ "$TEST_STATUS" = "failed" ]; then
+            if [ -f test_output.txt ]; then
+              TEST_ERRORS=$(tail -50 test_output.txt)
+              EMAIL_BODY="${EMAIL_BODY}
+          ❌ Test Hataları:
+          $TEST_ERRORS
+          
+          "
+            fi
+          fi
+          
+          # Docker hataları varsa ekle
+          if [ "$DOCKER_STATUS" = "failed" ]; then
+            if [ -f docker_run.txt ]; then
+              DOCKER_ERRORS=$(cat docker_run.txt)
+              EMAIL_BODY="${EMAIL_BODY}
+          ❌ Docker Hataları:
+          $DOCKER_ERRORS
+          
+          "
+            fi
+          fi
+          
+          # Email subject
+          if [ "$OVERALL_STATUS" = "success" ]; then
+            EMAIL_SUBJECT="✅ Test Sonuçları - Başarılı"
+          elif [ "$OVERALL_STATUS" = "warning" ]; then
+            EMAIL_SUBJECT="⚠️ Test Sonuçları - Uyarılar Var"
+          else
+            EMAIL_SUBJECT="❌ Test Sonuçları - Başarısız"
+          fi
+          
           # ---- SLACK ----
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"✅ *Testler tamamlandı!* Lint ve coverage raporu başarıyla oluşturuldu."}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
-
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            SLACK_MESSAGE=$(cat <<EOF
+          {
+            "text": "$STATUS_EMOJI *$STATUS_MESSAGE*",
+            "blocks": [
+              {
+                "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "$STATUS_EMOJI Test Sonuçları"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Lint:*\n$LINT_STATUS"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Test:*\n$TEST_STATUS"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Docker:*\n$DOCKER_STATUS"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Coverage:*\n$COVERAGE"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "<$WORKFLOW_URL|Workflow Detayları>"
+                }
+              }
+            ]
+          }
+          EOF
+          )
+            
+            curl -X POST -H 'Content-type: application/json' \
+              --data "$SLACK_MESSAGE" \
+              ${{ secrets.SLACK_WEBHOOK_URL }} || echo "Slack bildirimi gönderilemedi"
+          fi
+          
           # ---- E-POSTA ----
           python - <<EOF
           import smtplib
           from email.mime.text import MIMEText
-
-          msg = MIMEText("✅ Testler tamamlandı!\n📊 Coverage raporu oluşturuldu.\n🧹 Lint kontrolü başarıyla bitti.")
-          msg["Subject"] = "✅ Test Sonuçları - Lint & Coverage Başarılı"
+          import os
+          
+          email_body = """$EMAIL_BODY"""
+          email_subject = """$EMAIL_SUBJECT"""
+          
+          msg = MIMEText(email_body, 'plain', 'utf-8')
+          msg["Subject"] = email_subject
           msg["From"] = "${{ secrets.EMAIL_USER }}"
           msg["To"] = "${{ secrets.EMAIL_USER }}"
-
-          with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
-              server.starttls()
-              server.login("${{ secrets.EMAIL_USER }}", "${{ secrets.EMAIL_PASS }}")
-              server.send_message(msg)
+          
+          try:
+              with smtplib.SMTP("${{ secrets.EMAIL_HOST }}", int("${{ secrets.EMAIL_PORT }}")) as server:
+                  server.starttls()
+                  server.login("${{ secrets.EMAIL_USER }}", "${{ secrets.EMAIL_PASS }}")
+                  server.send_message(msg)
+              print("✅ Email başarıyla gönderildi")
+          except Exception as e:
+              print(f"❌ Email gönderilemedi: {e}")
           EOF
