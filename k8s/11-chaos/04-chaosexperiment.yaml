@@ -1,0 +1,52 @@
+# ChaosExperiment: Pod Delete Experiment
+# LitmusChaos v3.7.0 için pod-delete experiment manifesti
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: pod-delete
+  labels:
+    name: pod-delete
+    app.kubernetes.io/part-of: litmus
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods", "pods/exec", "pods/log"]
+        verbs: ["create", "list", "get", "patch", "update", "delete"]
+      - apiGroups: [""]
+        resources: ["events"]
+        verbs: ["create", "patch"]
+      - apiGroups: [""]
+        resources: ["configmaps"]
+        verbs: ["create", "list", "get", "update", "patch"]
+      - apiGroups: ["apps"]
+        resources: ["deployments"]
+        verbs: ["list", "get"]
+    image: litmuschaos/go-runner:latest
+    imagePullPolicy: Always
+    args:
+      - -c
+      - ./experiments/generic/pod-delete
+    command:
+      - /bin/bash
+    env:
+      - name: TARGET_CONTAINER
+        value: ""
+      - name: TOTAL_CHAOS_DURATION
+        value: "60"
+      - name: CHAOS_INTERVAL
+        value: "10"
+      - name: FORCE
+        value: "false"
+      - name: PODS_AFFECTED_PERC
+        value: ""
+      - name: RAMP_TIME
+        value: "10"
+      - name: SEQUENCE
+        value: "parallel"
+    labels:
+      name: pod-delete
+      app.kubernetes.io/part-of: litmus
+      app.kubernetes.io/component: chaosexperiment
+

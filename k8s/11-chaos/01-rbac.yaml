@@ -1,0 +1,48 @@
+# ServiceAccount: Chaos ajanı için servis hesabı
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos-sa
+  namespace: dev
+  labels:
+    name: chaos-sa
+---
+# Role: Chaos ajanının ihtiyaç duyduğu izinler
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chaos-role
+  namespace: dev
+  labels:
+    name: chaos-role
+rules:
+  # Pod'ları silmek, listelemek ve gözlemlemek için
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/exec"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Deployment'ları gözlemlemek için
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  # Event'leri okuyabilmek için
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch", "create"]
+---
+# RoleBinding: ServiceAccount'u Role'e bağla
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chaos-rb
+  namespace: dev
+  labels:
+    name: chaos-rb
+subjects:
+  - kind: ServiceAccount
+    name: chaos-sa
+    namespace: dev
+roleRef:
+  kind: Role
+  name: chaos-role
+  apiGroup: rbac.authorization.k8s.io
+

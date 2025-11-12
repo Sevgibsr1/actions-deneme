@@ -1,0 +1,50 @@
+# ChaosEngine: Pod delete deneyini yöneten ana manifest
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: nginx-pod-delete
+  namespace: dev
+spec:
+  # Deneyin hedeflediği uygulama bilgileri
+  appinfo:
+    appns: "dev"                    # Namespace
+    applabel: "app=nginx"           # Deployment'ın label'ı
+    appkind: "deployment"           # Kaynak tipi
+  
+  # Chaos için kullanılacak ServiceAccount
+  chaosServiceAccount: chaos-sa
+  
+  # Deney sonrası job'ları temizleme politikası
+  jobCleanUpPolicy: "retain"        # "retain" veya "delete"
+  
+  # Chaos runner ayarları
+  components:
+    runner:
+      imagePullPolicy: IfNotPresent
+  
+  # Çalıştırılacak deneyler
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            # Toplam kaos süresi (saniye)
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            
+            # Pod'lar arası bekleme süresi (saniye)
+            - name: CHAOS_INTERVAL
+              value: "10"
+            
+            # Pod'u zorla mı sil (true/false)
+            - name: FORCE
+              value: "false"
+            
+            # Ramp süresi - kaos başlamadan önce bekleme (saniye)
+            - name: RAMP_TIME
+              value: "10"
+            
+            # Kaos sonrası bekleme süresi (saniye)
+            - name: SEQUENCE
+              value: "parallel"      # "serial" veya "parallel"
+
