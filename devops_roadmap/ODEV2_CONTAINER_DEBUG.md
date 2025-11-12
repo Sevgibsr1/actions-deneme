@@ -339,14 +339,14 @@ docker rm problem-container
 
 Ödevi tamamladınız mı? Aşağıdakileri kontrol edin:
 
-- [ ] `docker exec -it` ile container içine girebiliyorum
-- [ ] Container içinde komut çalıştırabiliyorum
-- [ ] `docker logs` ile logları görebiliyorum
-- [ ] `docker logs -f` ile canlı log takibi yapabiliyorum
-- [ ] `docker run -it` ile interaktif container çalıştırabiliyorum
-- [ ] `docker inspect` ile container detaylarını görebiliyorum
-- [ ] Container içinde dosya oluşturup inceleyebiliyorum
-- [ ] Debug senaryosunu tamamladım
+- [+ ] `docker exec -it` ile container içine girebiliyorum
+- [+ ] Container içinde komut çalıştırabiliyorum
+- [+ ] `docker logs` ile logları görebiliyorum
+- [+ ] `docker logs -f` ile canlı log takibi yapabiliyorum
+- [+ ] `docker run -it` ile interaktif container çalıştırabiliyorum
+- [+ ] `docker inspect` ile container detaylarını görebiliyorum
+- [ +] Container içinde dosya oluşturup inceleyebiliyorum
+- [ +] Debug senaryosunu tamamladım
 
 ---
 

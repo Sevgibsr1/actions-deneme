@@ -1,1 +1,1 @@
-print("Merhaba Sevgi! GitHub Actions çalışıyor 🚀")
+Yeni içerik

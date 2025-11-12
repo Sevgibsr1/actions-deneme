@@ -234,14 +234,14 @@ docker inspect inspect-test --format='{{.Config.Image}}'
 
 Ödevi tamamladınız mı? Aşağıdakileri kontrol edin:
 
-- [ ] `docker ps` ile çalışan container'ları görebiliyorum
-- [ ] `docker ps -a` ile tüm container'ları görebiliyorum
-- [ ] `docker run --name` ile isimli container oluşturabiliyorum
-- [ ] `docker stop` ile container durdurabiliyorum
-- [ ] `docker rm` ile container silebiliyorum
-- [ ] `docker rm -f` ile çalışan container'ı zorla silebiliyorum
-- [ ] `docker container prune` ile toplu temizlik yapabiliyorum
-- [ ] `docker inspect` ile container detaylarını görebiliyorum
+- [ +] `docker ps` ile çalışan container'ları görebiliyorum
+- [ +] `docker ps -a` ile tüm container'ları görebiliyorum
+- [ +] `docker run --name` ile isimli container oluşturabiliyorum
+- [ +] `docker stop` ile container durdurabiliyorum
+- [ +] `docker rm` ile container silebiliyorum
+- [ +] `docker rm -f` ile çalışan container'ı zorla silebiliyorum
+- [ +] `docker container prune` ile toplu temizlik yapabiliyorum
+- [ +] `docker inspect` ile container detaylarını görebiliyorum
 
 ---
 
