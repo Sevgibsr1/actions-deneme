@@ -1,5 +1,10 @@
-# Grafana credentials - asla commit etme!
-.grafana-credentials
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+*.tfplan.json
 
 # Python
 __pycache__/
@@ -10,12 +15,14 @@ __pycache__/
 env/
 venv/
 ENV/
+.venv
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
@@ -24,14 +31,22 @@ Thumbs.db
 # Logs
 *.log
 
-# Kubernetes/Minikube
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.coverage.json
+
+# Docker
+docker-compose.override.yml
+
+# Kubernetes secrets (geçici dosyalar)
+k8s/03-config/secret-plain.yaml
+k8s/03-config/secret-plain.yml
+
+# Terraform ortam dosyaları (yerel)
+infra/environments/*/terraform.tfvars
+infra/environments/*/backend.hcl
+
+# Local binaries
 minikube
-*.kubeconfig
-
-# TLS Certificates (gizli anahtarlar)
-*.key
-tls.crt
-tls.key
-*.pem
-*.crt
-

@@ -39,6 +39,7 @@ docker run --rm -p 5000:5000 \
 - Flask ve Redis bağımlılıkları
 - Non-root kullanıcı ile çalışır
 - Production-ready yapılandırma
+- Python 3.12 tabanında hem multi-stage Dockerfile hem de `web/Dockerfile` senkronize çalışır
 
 ## 📝 Docker Compose ile Kullanım
 

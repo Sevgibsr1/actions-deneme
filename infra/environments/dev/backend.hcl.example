@@ -1,0 +1,7 @@
+# Örnek backend yapılandırması - gerçek değerlerle doldurun ve yeniden adlandırın
+bucket         = "terraform-state-dev"
+key            = "dev/terraform.tfstate"
+region         = "eu-central-1"
+dynamodb_table = "terraform-locks-dev"
+encrypt        = true
+

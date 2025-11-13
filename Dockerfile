@@ -20,9 +20,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Uygulama kodu (daha sık değişir)
 COPY . .
 
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r web/requirements.txt fakeredis
+
 # (İsteğe bağlı) Hızlı doğrulama: testler varsa çalıştır
-# Test dosyanız yoksa bu komut başarısız olmasın diye '|| true' ekliyoruz
-RUN pytest --maxfail=1 --disable-warnings -q || true
+RUN pytest --maxfail=1 --disable-warnings -q
 
 # =========================
 # 2) RUNTIME - Hello (basit uygulama)

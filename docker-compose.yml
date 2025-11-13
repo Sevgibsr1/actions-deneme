@@ -21,7 +21,8 @@ services:
   web:
     build:
       context: .
-      dockerfile: web/Dockerfile
+      dockerfile: Dockerfile
+      target: web-runtime
     environment:
       REDIS_HOST: redis
       REDIS_PORT: "6379"

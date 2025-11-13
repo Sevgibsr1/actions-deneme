@@ -1,0 +1,12 @@
+aws_region          = "eu-central-1"
+vpc_cidr            = "10.0.0.0/16"
+availability_zones  = ["eu-central-1a", "eu-central-1b"]
+instance_count      = 1
+instance_type       = "t3.micro"
+key_name            = "my-dev-key"
+docker_image        = "actions-deneme:web"
+enable_elastic_ip   = false
+volume_type         = "gp3"
+volume_size         = 20
+ssh_allowed_cidrs   = ["203.0.113.0/24"]
+
