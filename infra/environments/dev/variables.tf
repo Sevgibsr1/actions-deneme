@@ -27,7 +27,7 @@ variable "instance_count" {
 variable "instance_type" {
   description = "EC2 instance tipi"
   type        = string
-  default     = "t2.micro"
+  default     = "t2.small"
 }
 
 variable "key_name" {
