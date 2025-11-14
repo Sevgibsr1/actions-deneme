@@ -103,11 +103,17 @@ Bu projede şu dizin yapısı kullanılmaktadır:
 │       ├── dev/                  ← Development ortamı
 │       │   ├── main.tf
 │       │   ├── variables.tf
-│       │   └── backend.tf
+│       │   ├── outputs.tf
+│       │   ├── backend.tf        ← backend "s3" {} (boş blok)
+│       │   ├── backend.hcl.example
+│       │   └── terraform.tfvars.example
 │       └── prod/                 ← Production ortamı
 │           ├── main.tf
 │           ├── variables.tf
-│           └── backend.tf
+│           ├── outputs.tf
+│           ├── backend.tf        ← backend "s3" {} (boş blok)
+│           ├── backend.hcl.example
+│           └── terraform.tfvars.example
 └── web/                          ← Mevcut Flask uygulaması
     ├── app.py
     ├── Dockerfile
@@ -168,33 +174,29 @@ module "compute" {
 
 ### Backend Yapılandırması
 
-Her ortam kendi backend'ini kullanır:
+Her ortamın `backend.tf` dosyasında yalnızca aşağıdaki gibi boş bir backend bloğu bulunur; gerçek değerler kendi makinenizde oluşturacağınız `backend.hcl` dosyasından okunur.
 
 ```hcl
-# environments/dev/backend.tf
 terraform {
-  backend "s3" {
-    bucket         = "terraform-state-dev"
-    key            = "dev/terraform.tfstate"
-    region         = "eu-central-1"
-    dynamodb_table = "terraform-locks-dev"
-    encrypt        = true
-  }
+  backend "s3" {}
 }
 ```
 
-```hcl
-# environments/prod/backend.tf
-terraform {
-  backend "s3" {
-    bucket         = "terraform-state-prod"
-    key            = "prod/terraform.tfstate"
-    region         = "eu-central-1"
-    dynamodb_table = "terraform-locks-prod"
-    encrypt        = true
-  }
-}
+İlk kullanımda şu adımları izleyin:
+
+```bash
+cd infra/environments/dev
+cp backend.hcl.example backend.hcl
+cp terraform.tfvars.example terraform.tfvars
+
+# backend.hcl dosyasını düzenleyin ve S3 + DynamoDB bilgilerinizi girin
+# terraform.tfvars içine ortam değişkenlerini özelleştirin
+
+terraform init -backend-config=backend.hcl
+terraform plan -var-file=terraform.tfvars
 ```
+
+Aynı yaklaşımı `prod` klasörü için de uygulayabilirsiniz. Böylece state dosyaları (S3 bucket/key) ve ortam değişkenleri (tfvars) repoya eklenmeden kişisel kopyalarınızla yönetilmiş olur.
 
 ### State Locking
 
@@ -218,6 +220,41 @@ Terraform CI/CD workflow'u şu adımları içerir:
 - **Pull Request**: `terraform plan` çalışır
 - **Push to main (dev)**: Otomatik `terraform apply`
 - **Push to main (prod)**: Manuel onay sonrası `terraform apply`
+
+---
+
+## Hızlı Başlangıç Akışı
+
+Terraform'a yeni başlıyorsanız aşağıdaki beş adım sizi hızlıca çalışır hâle getirir:
+
+1. **Kurulum**
+   ```bash
+   terraform -version   # kurulu değilse HashiCorp sitesinden indir
+   aws configure        # AWS erişim anahtarlarını gir
+   ```
+2. **Ortam Dosyalarını Hazırla**
+   ```bash
+   cd infra/environments/dev
+   cp backend.hcl.example backend.hcl
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+   Bu dosyalardaki placeholder değerleri kendi S3 bucket, DynamoDB tablosu ve ağ ayarlarınla değiştir.
+3. **Terraform'u Başlat**
+   ```bash
+   terraform init -backend-config=backend.hcl
+   ```
+4. **Planı Gör**
+   ```bash
+   terraform plan -var-file=terraform.tfvars
+   ```
+   Çıktıyı inceleyerek hangi AWS kaynaklarının oluşturulacağını ve maliyet etkisini not al.
+5. **(Opsiyonel) Uygula**
+   ```bash
+   terraform apply -var-file=terraform.tfvars
+   ```
+   Sadece dev ortamında doğrulama yaptıktan sonra çalıştır. Prod için PR + onay sürecini kullan.
+
+Bu akış, aynı adımları `prod` klasöründe tekrar ederek production ortamına da uygulanabilir (daha yüksek kaynak değerleriyle).
 
 ---
 
@@ -253,19 +290,47 @@ terraform output
 
 ### Ortam Bazlı Çalıştırma
 
+**Dev Ortamında Çalışma:**
 ```bash
-# Dev ortamı için
 cd infra/environments/dev
-terraform init
-terraform plan
-terraform apply
-
-# Prod ortamı için
-cd infra/environments/prod
-terraform init
-terraform plan
-terraform apply
+terraform init -backend-config=backend.hcl
+terraform plan -var-file=terraform.tfvars
+terraform apply -var-file=terraform.tfvars
 ```
+
+**Prod Ortamına Geçiş:**
+
+Prod ortamına geçmek için sadece klasör değiştirmen yeterli! Her ortam kendi klasöründe ve kendi state dosyasını kullanır.
+
+```bash
+# 1. Prod klasörüne geç
+cd infra/environments/prod
+
+# 2. Prod için backend ve tfvars dosyalarını hazırla (ilk kez)
+cp backend.hcl.example backend.hcl
+cp terraform.tfvars.example terraform.tfvars
+
+# 3. backend.hcl dosyasını düzenle (prod için farklı S3 bucket/key kullan)
+# Örnek: bucket = "terraform-state-prod" (dev'de "terraform-state-dev" idi)
+
+# 4. terraform.tfvars dosyasını düzenle (prod için daha yüksek kaynaklar)
+# Örnek: instance_type = "t3.medium" (dev'de "t2.micro" idi)
+
+# 5. Terraform'u başlat
+terraform init -backend-config=backend.hcl
+
+# 6. Plan yap (mutlaka kontrol et!)
+terraform plan -var-file=terraform.tfvars
+
+# 7. Apply yap (dikkatli! Prod'da değişiklikler gerçek kullanıcıları etkiler)
+terraform apply -var-file=terraform.tfvars
+```
+
+**Önemli Notlar:**
+- Dev ve prod ortamları **tamamen ayrı** AWS kaynakları oluşturur
+- Her ortamın kendi S3 state dosyası vardır (karışmaz)
+- Dev'de yaptığın değişiklikler prod'u etkilemez
+- Prod'da değişiklik yapmadan önce mutlaka dev'de test et
 
 ---
 
@@ -312,16 +377,31 @@ Her zaman `terraform plan` çıktısını kontrol edin.
 
 **Adımlar**:
 1. Terraform'u sisteminize kurun
+   
+   **Ubuntu/WSL için (Önerilen - Resmi Repo):**
    ```bash
-   # Linux/Mac
+   # HashiCorp GPG anahtarını ekle
+   wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+   
+   # Repo'yu ekle
+   echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+   
+   # Paket listesini güncelle ve kur
+   sudo apt update
+   sudo apt install terraform
+   ```
+   
+   **Alternatif: Manuel Kurulum (Linux/Mac):**
+   ```bash
    wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
    unzip terraform_1.6.0_linux_amd64.zip
    sudo mv terraform /usr/local/bin/
-   
-   # Windows
-   # Chocolatey ile: choco install terraform
-   # veya manuel indirin ve PATH'e ekleyin
+   rm terraform_1.6.0_linux_amd64.zip
    ```
+   
+   **Windows için:**
+   - Chocolatey ile: `choco install terraform`
+   - veya manuel indirin ve PATH'e ekleyin
 
 2. Terraform versiyonunu kontrol edin
    ```bash
@@ -333,12 +413,15 @@ Her zaman `terraform plan` çıktısını kontrol edin.
    aws configure
    ```
 
-4. `infra/environments/dev` klasörüne gidin ve şu komutları çalıştırın:
-   ```bash
-   terraform init
-   terraform validate
-   terraform plan
-   ```
+4. `infra/environments/dev` klasörüne gidin ve şu adımları izleyin:
+    ```bash
+    cd infra/environments/dev
+    cp backend.hcl.example backend.hcl
+    cp terraform.tfvars.example terraform.tfvars
+    terraform init -backend-config=backend.hcl
+    terraform validate
+    terraform plan -var-file=terraform.tfvars
+    ```
 
 **Beklenen Çıktı**: 
 - Terraform başarıyla initialize olmalı
