@@ -48,5 +48,11 @@ k8s/03-config/secret-plain.yml
 infra/environments/*/terraform.tfvars
 infra/environments/*/backend.hcl
 
+# AWS credentials (GÜVENLİK: ASLA COMMIT ETME!)
+.aws/
+*.pem
+*credentials*
+*secret*
+
 # Local binaries
 minikube
