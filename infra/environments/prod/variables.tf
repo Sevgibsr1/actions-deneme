@@ -27,7 +27,7 @@ variable "instance_count" {
 variable "instance_type" {
   description = "EC2 instance tipi"
   type        = string
-  default     = "t3.medium" # Prod için daha güçlü instance
+  default     = "t3.micro" # Free Tier için uygun (öğrenme ortamı)
 }
 
 variable "key_name" {
