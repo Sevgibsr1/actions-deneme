@@ -14,7 +14,7 @@ terraform {
 
 # Subnet Group oluştur (Redis için private subnet'ler kullanılır)
 resource "aws_elasticache_subnet_group" "redis" {
-  name       = "${var.environment}-redis-subnet-group"
+  name       = "${var.environment}-redis-subnet-group-v2"
   subnet_ids = var.subnet_ids
 
   tags = merge(
