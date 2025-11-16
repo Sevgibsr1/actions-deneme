@@ -134,7 +134,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan -var-file=terraform.tfvars -no-color -out=tfplan
+          terraform plan -no-color -out=tfplan
         continue-on-error: true
 
       - name: Upload Plan Artifact
@@ -243,12 +243,15 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Download Plan Artifact
+        id: download-plan
         uses: actions/download-artifact@v4
         with:
           name: terraform-plan-dev
           path: infra/environments/dev
+        continue-on-error: true
 
       - name: Terraform Apply
+        if: steps.download-plan.outcome == 'success'
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Output
@@ -291,12 +294,15 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Download Plan Artifact
+        id: download-plan
         uses: actions/download-artifact@v4
         with:
           name: terraform-plan-prod
           path: infra/environments/prod
+        continue-on-error: true
 
       - name: Terraform Apply
+        if: steps.download-plan.outcome == 'success'
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Output
