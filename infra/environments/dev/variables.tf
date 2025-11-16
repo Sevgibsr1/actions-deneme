@@ -57,7 +57,7 @@ variable "volume_type" {
 variable "volume_size" {
   description = "Root volume boyutu (GB)"
   type        = number
-  default     = 30  # Minimum 30GB (snapshot gereksinimi)
+  default     = 30 # Minimum 30GB (snapshot gereksinimi)
 }
 
 variable "ssh_allowed_cidrs" {

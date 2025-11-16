@@ -35,24 +35,24 @@ output "elastic_ip" {
   value       = module.compute.elastic_ip
 }
 
-# Redis Çıktıları - Geçici olarak devre dışı (validate hatası için test)
-# output "redis_primary_endpoint" {
-#   description = "Redis primary endpoint address"
-#   value       = module.redis.primary_endpoint_address
-# }
-#
-# output "redis_primary_port" {
-#   description = "Redis primary endpoint port"
-#   value       = module.redis.primary_endpoint_port
-# }
-#
-# output "redis_connection_string" {
-#   description = "Redis connection string (hostname:port)"
-#   value       = "${module.redis.primary_endpoint_address}:${module.redis.primary_endpoint_port}"
-# }
-#
-# output "redis_replication_group_id" {
-#   description = "Redis replication group ID"
-#   value       = module.redis.replication_group_id
-# }
+# Redis Çıktıları
+output "redis_primary_endpoint" {
+  description = "Redis primary endpoint address"
+  value       = module.redis.primary_endpoint_address
+}
+
+output "redis_primary_port" {
+  description = "Redis primary endpoint port"
+  value       = module.redis.primary_endpoint_port
+}
+
+output "redis_connection_string" {
+  description = "Redis connection string (hostname:port)"
+  value       = "${module.redis.primary_endpoint_address}:${module.redis.primary_endpoint_port}"
+}
+
+output "redis_replication_group_id" {
+  description = "Redis replication group ID"
+  value       = module.redis.replication_group_id
+}
 
