@@ -90,7 +90,7 @@ module "redis" {
     Environment = "dev"
     Project     = "actions-deneme"
     ManagedBy   = "Terraform"
-    Odev5       = "CI/CD-Pipeline-Test"  # Ödev 5: CI/CD test için eklenen tag
+    Odev5       = "CI/CD-Pipeline-Test" # Ödev 5: CI/CD test için eklenen tag
   }
 }
 
