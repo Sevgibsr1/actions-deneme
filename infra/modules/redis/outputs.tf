@@ -17,7 +17,7 @@ output "primary_endpoint_address" {
 
 output "primary_endpoint_port" {
   description = "Redis primary endpoint port"
-  value       = aws_elasticache_replication_group.redis.primary_endpoint_port
+  value       = aws_elasticache_replication_group.redis.port
 }
 
 output "reader_endpoint_address" {
@@ -27,7 +27,7 @@ output "reader_endpoint_address" {
 
 output "reader_endpoint_port" {
   description = "Redis reader endpoint port"
-  value       = aws_elasticache_replication_group.redis.reader_endpoint_port
+  value       = aws_elasticache_replication_group.redis.port
 }
 
 output "configuration_endpoint_address" {
