@@ -3,7 +3,7 @@
 variable "aws_region" {
   description = "AWS bölgesi"
   type        = string
-  default     = "eu-north-1"  # Mevcut EC2 instance ile aynı region
+  default     = "eu-north-1" # Mevcut EC2 instance ile aynı region
 }
 
 variable "vpc_cidr" {
@@ -15,7 +15,7 @@ variable "vpc_cidr" {
 variable "availability_zones" {
   description = "Kullanılacak availability zone'lar"
   type        = list(string)
-  default     = ["eu-north-1a", "eu-north-1b"]  # eu-north-1 için doğru AZ'ler
+  default     = ["eu-north-1a", "eu-north-1b"] # eu-north-1 için doğru AZ'ler
 }
 
 variable "instance_count" {
