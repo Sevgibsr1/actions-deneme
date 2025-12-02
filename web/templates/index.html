@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Redis Counter App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .status-value {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .status-up {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-down {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .counter-section {
+            margin: 30px 0;
+        }
+
+        .counter-display {
+            font-size: 4em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .endpoints {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .endpoints h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .endpoint-list {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .endpoint-item {
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .endpoint-item a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .endpoint-item a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading.active {
+            display: block;
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Flask Redis Counter</h1>
+        <p class="subtitle">DevOps Öğrenim Projesi</p>
+
+        <div class="status-card">
+            <h2 style="color: #333; margin-bottom: 20px;">Sistem Durumu</h2>
+            <div class="status-item">
+                <span class="status-label">Uygulama Durumu:</span>
+                <span class="status-value status-up" id="app-status">Yükleniyor...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Redis Durumu:</span>
+                <span class="status-value" id="redis-status">Yükleniyor...</span>
+            </div>
+        </div>
+
+        <div class="counter-section">
+            <h2 style="color: #333; margin-bottom: 20px;">Sayaç</h2>
+            <div class="counter-display" id="counter-value">0</div>
+            <button class="btn" onclick="incrementCounter()">➕ Sayacı Artır</button>
+            <button class="btn btn-refresh" onclick="refreshStatus()">🔄 Yenile</button>
+            <div class="loading" id="loading">Yükleniyor...</div>
+        </div>
+
+        <div class="endpoints">
+            <h3>API Endpoint'leri</h3>
+            <div class="endpoint-list">
+                <div class="endpoint-item">
+                    <strong>GET</strong> <a href="/" target="_blank">/</a> - Ana sayfa (JSON)
+                </div>
+                <div class="endpoint-item">
+                    <strong>GET</strong> <a href="/health" target="_blank">/health</a> - Sağlık kontrolü (JSON)
+                </div>
+                <div class="endpoint-item">
+                    <strong>GET</strong> <a href="/counter" target="_blank">/counter</a> - Sayaç artırma (JSON)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sayfa yüklendiğinde durumu kontrol et
+        window.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+            getCounter();
+        });
+
+        // Durum bilgisini yenile
+        async function refreshStatus() {
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+            
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                document.getElementById('app-status').textContent = data.app === 'up' ? '✅ Çalışıyor' : '❌ Çalışmıyor';
+                document.getElementById('app-status').className = 'status-value ' + (data.app === 'up' ? 'status-up' : 'status-down');
+                
+                document.getElementById('redis-status').textContent = data.redis === 'up' ? '✅ Bağlı' : '❌ Bağlı Değil';
+                document.getElementById('redis-status').className = 'status-value ' + (data.redis === 'up' ? 'status-up' : 'status-down');
+            } catch (error) {
+                document.getElementById('app-status').textContent = '❌ Hata';
+                document.getElementById('app-status').className = 'status-value status-down';
+                document.getElementById('redis-status').textContent = '❌ Hata';
+                document.getElementById('redis-status').className = 'status-value status-down';
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        // Sayaç değerini al
+        async function getCounter() {
+            try {
+                const response = await fetch('/counter');
+                const data = await response.json();
+                if (data.counter !== undefined) {
+                    document.getElementById('counter-value').textContent = data.counter;
+                }
+            } catch (error) {
+                console.error('Sayaç alınamadı:', error);
+            }
+        }
+
+        // Sayacı artır
+        async function incrementCounter() {
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+            
+            try {
+                const response = await fetch('/counter');
+                const data = await response.json();
+                
+                if (data.counter !== undefined) {
+                    document.getElementById('counter-value').textContent = data.counter;
+                    // Animasyon efekti
+                    const counterDisplay = document.getElementById('counter-value');
+                    counterDisplay.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        counterDisplay.style.transform = 'scale(1)';
+                    }, 200);
+                } else if (data.error) {
+                    alert('Hata: ' + data.error);
+                }
+            } catch (error) {
+                alert('Sayaç artırılamadı: ' + error.message);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        // Her 5 saniyede bir durumu otomatik yenile
+        setInterval(refreshStatus, 5000);
+    </script>
+</body>
+</html>
+

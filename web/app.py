@@ -7,7 +7,7 @@ import os
 import time
 from typing import Optional
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template, request
 import redis
 
 
@@ -59,7 +59,10 @@ except Exception:
 
 @app.get("/")
 def root():
-    """Ana endpoint - uygulama durumunu döner."""
+    """Ana endpoint - HTML sayfası veya JSON döner."""
+    # Accept header kontrolü - tarayıcı HTML ister, API çağrıları JSON ister
+    if request.headers.get('Accept', '').find('text/html') != -1:
+        return render_template('index.html')
     return jsonify(status="OK")
 
 
